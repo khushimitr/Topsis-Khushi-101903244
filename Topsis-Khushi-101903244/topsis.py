@@ -3,24 +3,31 @@ import sys
 import numpy as np
 import logging
 
-def topsis_score():
+def topsis_score(fname,w,im,outfile):
     logging.basicConfig(filename="101903244-log.log",level = logging.DEBUG,encoding='utf-8')
-    args = sys.argv
-    if(len(args) > 5 or len(args) < 5):
-        logging.error("Wrong Number of Inputs provided")
-        return
-    fname = args[1]
-    if ',' not in args[2]:
+    # args = sys.argv
+    # if(len(args) > 5 or len(args) < 5):
+    #     logging.error("Wrong Number of Inputs provided")
+    #     return
+    # fname = args[1]
+
+    if ',' not in w:
         logging.error("Array weights should be separated by ','")
         return
-    weights = args[2].split(',')
-    weights = list(map(int,weights))
+    
+    weights = w.split(',')
+    try:
+        weights = list(map(int,weights))
+    except ValueError:
+        logging.error("Weights has non integral value")
+        return
 
-    if ',' not in args[3]:
+    if ',' not in im:
         logging.error("Array impacts should be separated by ','")
         return
-    impact = args[3].split(',')
-    outfile = args[4]
+    impact = im.split(',')
+    
+    # outfile = args[4]
     
     for x in impact:
         if x != '+' and x != '-':
@@ -80,6 +87,3 @@ def topsis_score():
     df['Rank'] = (df['Topsis Score'].rank(method='max', ascending=False))
     df.to_csv(outfile)
 
-
-if __name__ == "__main__":
-    topsis_score()
