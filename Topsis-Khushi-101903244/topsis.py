@@ -1,22 +1,62 @@
 import pandas as pd
 import sys
 import numpy as np
+import logging
 
 def topsis_score():
-    filename = pd.read_excel('data.xlsx')
-    filename.to_csv ("101903244-data.csv", 
-                    index = None,
-                    header=True)
+    logging.basicConfig(filename="101903244-log.log",level = logging.DEBUG,encoding='utf-8')
+    args = sys.argv
+    if(len(args) > 5 or len(args) < 5):
+        logging.error("Wrong Number of Inputs provided")
+        return
+    fname = args[1]
+    if ',' not in args[2]:
+        logging.error("Array weights should be separated by ','")
+        return
+    weights = args[2].split(',')
+    weights = list(map(int,weights))
 
-    df = pd.read_csv("101903244-data.csv")
+    if ',' not in args[3]:
+        logging.error("Array impacts should be separated by ','")
+        return
+    impact = args[3].split(',')
+    outfile = args[4]
+    
+    for x in impact:
+        if x != '+' and x != '-':
+            logging.error("Impact must contain only '+' or '-'")
+            return
+
+    try:
+        df = pd.read_csv(fname)
+    except FileNotFoundError:
+        logging.error("Input file provided not found")
+        return
+
+    
+    if(len(df.columns) < 3):
+        logging.error("Less Number of columns in Input File")
+        return
+
     ndf = df.drop('Fund Name', axis=1)
     row = len(ndf)
     cols = len(ndf.iloc[0,:])
 
+    for i in range(row):
+        rows = list(ndf.iloc[i])
+        for j in range(cols):
+            try:
+                rows[j] = pd.to_numeric(rows[j])
+            except ValueError:
+                logging.warning(f"Non numeric value encountered in input.csv at {i}th row and {j}th coln")
+
+
+    if(cols != len(weights) or cols != len(impact)):
+        logging.error("Length of inputs not match.")
+        return
+
     den = ndf.apply(np.square).apply(np.sum,axis = 0).apply(np.sqrt)
 
-    weights = [1,1,1,2,1]
-    impact = ['+','+','-','+','+']
     for i in range(cols):
         for j in range(row):
             ndf.iat[j, i] = (ndf.iloc[j, i] / den[i]) * weights[i]
@@ -38,7 +78,7 @@ def topsis_score():
 
     df['Topsis Score'] = score
     df['Rank'] = (df['Topsis Score'].rank(method='max', ascending=False))
-    df.to_csv("101903244-result.csv")
+    df.to_csv(outfile)
 
 
 if __name__ == "__main__":
